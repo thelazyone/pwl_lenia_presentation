@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  /* Base colors */
+  --background: #141414;
+  --surface: #242424;
+  --surface-light: #c0b3a3;
+  
+  /* Text colors */
+  --white-label: rgba(255, 255, 255, 0.54);
+  --black-label: rgba(0, 0, 0, 0.87);
+  --text: #ACB3BF;
+  
+  /* Syntax highlighting colors */
+  --keyword: #ff6470;
+  --function: #ffc66d;
+  --string: #99C47A;
+  --number: #68ABDF;
+  --property: #AC7BB5;
+  --comment: #808586;
+  
+  /* Accent colors */
+  --red: #ef5350;
+  --green: #8bc34a;
+  --blue: #2196f3;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+} 
