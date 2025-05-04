@@ -9,7 +9,7 @@ export default makeScene2D(function* (view) {
   const abstract = createRef<Txt>();
   const discrete = createRef<Txt>();
   const emergent = createRef<Txt>();
-  const layout = createRef<Layout>();
+  const wordsLayout = createRef<Layout>();
   const background = createRef<Rect>();
 
   // Add background
@@ -22,55 +22,67 @@ export default makeScene2D(function* (view) {
     />
   );
 
+  // Title
   view.add(
-    <Layout ref={layout} direction="column" gap={40} layout alignItems="center">
+    <Txt
+      ref={title}
+      {...textStyles.h1}
+      position={[0, 0]}
+    >
+      Cellular Automata
+    </Txt>
+  );
+
+  // Three words
+  view.add(
+    <Layout 
+      ref={wordsLayout} 
+      direction="column" 
+      gap={60} 
+      alignItems="center" 
+      position={[0, 50]}
+      layout
+    >
       <Txt
-        ref={title}
-        {...textStyles.h1}
-      >
-        Cellular Automata
-      </Txt>
-      <Layout direction="column" gap={20} alignItems="center" position={[0, 100]}>
-        <Txt
-          ref={computational}
-          {...textStyles.h2}
-          fill={Colors.TEXT}
-          opacity={0}
-        >
-          Computational
-        </Txt>
-        <Txt
-          ref={abstract}
-          {...textStyles.h2}
-          fill={Colors.TEXT}
-          opacity={0}
-        >
-          Abstract
-        </Txt>
-        <Txt
-          ref={discrete}
-          {...textStyles.h2}
-          fill={Colors.TEXT}
-          opacity={0}
-        >
-          Discrete
-        </Txt>
-      </Layout>
-      <Txt
-        ref={emergent}
+        ref={computational}
         {...textStyles.h2}
         fill={Colors.TEXT}
-        opacity={0}
-        position={[0, 300]}
       >
-        Emergent Behaviour
+        Computational
+      </Txt>
+      <Txt
+        ref={abstract}
+        {...textStyles.h2}
+        fill={Colors.TEXT}
+      >
+        Abstract
+      </Txt>
+      <Txt
+        ref={discrete}
+        {...textStyles.h2}
+        fill={Colors.TEXT}
+      >
+        Discrete
       </Txt>
     </Layout>
   );
 
+  // Emergent behavior
+  view.add(
+    <Txt
+      ref={emergent}
+      {...textStyles.h2}
+      fill={Colors.TEXT}
+      opacity={0}
+      position={[0, 350]}
+    >
+      Emergent Behaviour
+    </Txt>
+  );
+
   // Initial state
   title().opacity(0);
-  layout().position.y(0);
+  wordsLayout().opacity(0);
 
   // First slide: Title centered
   yield* title().opacity(1, 1);
@@ -78,10 +90,8 @@ export default makeScene2D(function* (view) {
 
   // Second slide: Move title up and show all words
   yield* all(
-    layout().position.y(-200, 1),
-    computational().opacity(1, 0.5),
-    abstract().opacity(1, 0.5),
-    discrete().opacity(1, 0.5)
+    title().position.y(-view.height()/2 + 150, 1),
+    wordsLayout().opacity(1, 0.5)
   );
   yield* beginSlide('words');
 
@@ -105,7 +115,7 @@ export default makeScene2D(function* (view) {
   yield* all(
     discrete().fill(Colors.TEXT, 0.5),
     emergent().opacity(1, 0.5),
-    layout().position.y(-300, 0.5)
+    wordsLayout().position.y(-30, 0.5)
   );
   yield* beginSlide('emergent');
 }); 
