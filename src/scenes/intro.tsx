@@ -89,10 +89,8 @@ export default makeScene2D(function* (view) {
   yield* beginSlide('title');
 
   // Second slide: Move title up and show all words
-  yield* all(
-    title().position.y(-view.height()/2 + 150, 1),
-    wordsLayout().opacity(1, 0.5)
-  );
+  yield* title().position.y(-view.height()/2 + 150, 1),
+  yield* wordsLayout().opacity(1, 0.5)
   yield* beginSlide('words');
 
   // Highlight words sequentially
@@ -118,4 +116,18 @@ export default makeScene2D(function* (view) {
     wordsLayout().position.y(-30, 0.5)
   );
   yield* beginSlide('emergent');
+
+  // First fade out everything except title
+  yield* all(
+    wordsLayout().opacity(0, 0.5),
+    emergent().opacity(0, 0.5)
+  );
+  
+
+  // Then move title back to center and change text
+  yield* all(
+    title().position.y(0, 1),
+    title().text("One Dimension", 1)
+  );
+  yield* beginSlide('transition-to-one-dimension');
 }); 

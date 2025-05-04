@@ -5,8 +5,7 @@ import {Colors, textStyles} from './shared';
 export default makeScene2D(function* (view) {
   view.lineHeight(64);
   const title = createRef<Txt>();
-  const description = createRef<Txt>();
-  const layout = createRef<Layout>();
+  const description = createRef<Layout>();
   const background = createRef<Rect>();
 
   // Add background
@@ -19,34 +18,43 @@ export default makeScene2D(function* (view) {
     />
   );
 
+  // Title
   view.add(
-    <Layout ref={layout} direction="column" gap={40} layout>
-      <Txt
-        ref={title}
-        {...textStyles.h1}
-      >
-        One-Dimensional Cellular Automata
+    <Txt
+      ref={title}
+      {...textStyles.h1}
+      position={[0, 0]}
+    >
+      One Dimension
+    </Txt>
+  );
+
+  // Description
+  view.add(
+    <Layout
+      ref={description}
+      direction="column"
+      gap={0}
+      alignItems="center"
+      position={[0, -view.height()/2 + 300]}
+      opacity={0}
+      layout
+    >
+      <Txt {...textStyles.body} textAlign="center">
+        Steven Wolfram's Elementary Cellular Automata
       </Txt>
-      <Txt
-        ref={description}
-        {...textStyles.body}
-        maxWidth={1000}
-        textAlign="center"
-      >
-        Steven Wolfram's Elementary Cellular Automata: A single line of cells starting with ONE cell alive, expanding in a noisy yet deterministic way.
+      <Txt {...textStyles.body} textAlign="center">
+        Alive if □□■,  ■□□,  □■□, or  □■■ (asymmetric!)
       </Txt>
     </Layout>
   );
 
   // Initial state
-  title().opacity(0);
+  title().opacity(1);
   description().opacity(0);
 
-  // First slide: Title
-  yield* title().opacity(1, 1);
-  yield* beginSlide('title');
-
-  // Second slide: Description
-  yield* description().opacity(1, 1);
+  // First slide: Move title up and description
+  yield* title().position.y(-view.height()/2 + 150, 1);
+  yield* description().opacity(1, .5);
   yield* beginSlide('description');
 }); 
