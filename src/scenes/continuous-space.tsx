@@ -358,7 +358,7 @@ export default makeScene2D(function* (view) {
   // Then move title back to center and change text
   yield* all(
     title().position.y(0, 1),
-    title().text("Lenia", 1)
+    title().text("The Paper", 1)
   );
-  yield* beginSlide('transition-to-Lenia');
+  yield* beginSlide('transition-to-papers');
 }); 
