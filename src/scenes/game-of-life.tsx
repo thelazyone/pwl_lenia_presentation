@@ -56,6 +56,233 @@ function getPreviousState(initialState: [number, number][], iteration: number): 
   return getGameOfLifeState(initialState, iteration - 1);
 }
 
+// Function to create a glider object from coordinates
+function createGliderObject(coordinates: [number, number][]) {
+  // Find the minimum x and y to normalize coordinates
+  const minX = Math.min(...coordinates.map(([x]) => x));
+  const minY = Math.min(...coordinates.map(([, y]) => y));
+  
+  // Create a layout to hold the glider
+  const gliderLayout = createRef<Layout>();
+  
+  // Create the squares with normalized coordinates
+  const squares = coordinates.map(([x, y]) => {
+    const normalizedX = (x - minX) * 62; // 50 (width) + 12 (gap)
+    const normalizedY = (y - minY) * 62;
+    return (
+      <Rect
+        width={50}
+        height={50}
+        x={normalizedX}
+        y={normalizedY}
+        fill={Colors.whiteLabel}
+        radius={8}
+      />
+    );
+  });
+
+  return {gliderLayout, squares};
+}
+
+// Game of Life object definitions
+const gameObjects: Record<string, [number, number][]> = {
+  glider: [
+    [0, 0], [1, 0], [2, 0],
+    [2, 1],
+    [1, 2]
+  ] as [number, number][],
+  spaceship: [ // Light-weight spaceship
+    [0, 0], [3, 0],
+    [4, 1],
+    [0, 2], [4, 2],
+    [1, 3], [2, 3], [3, 3], [4, 3]
+  ] as [number, number][],
+  blinker: [ // Period 2 oscillator
+    [0, 0],
+    [0, 1],
+    [0, 2]
+  ] as [number, number][],
+  pulsar: [ // Period 3 oscillator
+    [0, 2], [0, 3], [0, 9], [0, 10],
+    [1, 3], [1, 4], [1, 8], [1, 9],
+    [2, 0], [2, 3], [2, 5], [2, 7], [2, 9], [2, 12],
+    [3, 0], [3, 1], [3, 2], [3, 4], [3, 5], [3, 0], [3, 7], [3, 8], [3, 10], [3, 11], [3, 12],
+    [4, 1], [4, 3], [4, 5], [4, 7], [4, 9], [4, 11],
+    [5, 2], [5, 3], [5, 4], [5, 8], [5, 9], [5, 10],
+    [7, 2], [7, 3], [7, 4], [7, 8], [7, 9], [7, 10],
+    [8, 1], [8, 3], [8, 5], [8, 7], [8, 9], [8, 11],
+    [9, 0], [9, 1], [9, 2], [9, 4], [9, 5], [9, 0], [9, 7], [9, 8], [9, 10], [9, 11], [9, 12],
+    [10, 0], [10, 3], [10, 5], [10, 7], [10, 9], [10, 12],
+    [11, 3], [11, 4], [11, 8], [11, 9],
+    [12, 2], [12, 3], [12, 9], [12, 10],
+  ] as [number, number][],
+  beehive: [ // Still life
+    [1, 0], [2, 0],
+    [0, 1], [3, 1],
+    [1, 2], [2, 2]
+  ] as [number, number][],
+  tub: [ // Still life
+    [1, 0],
+    [0, 1], [2, 1],
+    [1, 2]
+  ] as [number, number][],
+  puffer1: [ // Small puffer
+    [0, 0], [1, 0], [2, 0],
+    [0, 1], [2, 1],
+    [0, 2], [1, 2], [2, 2],
+    [3, 3], [4, 3], [5, 3],
+    [3, 4], [5, 4],
+    [3, 5], [4, 5], [5, 5]
+  ] as [number, number][]
+};
+
+// Pattern type definition
+type Pattern = {
+  name: string;
+  coordinates: [number, number][];
+  scale?: number;
+};
+
+// Pattern definitions
+const patterns: Record<string, Pattern> = {
+  glider: {
+    name: 'glider',
+    coordinates: [
+      [0, 0], [1, 0], [2, 0],
+      [2, 1],
+      [1, 2]
+    ],
+    scale: 0.8
+  },
+  spaceship: {
+    name: 'spaceship',
+    coordinates: [
+      [0, 0], [3, 0],
+      [4, 1],
+      [0, 2], [4, 2],
+      [1, 3], [2, 3], [3, 3], [4, 3]
+    ],
+    scale: 0.8
+  },
+  blinker: {
+    name: 'blinker',
+    coordinates: [
+      [0, 0],
+      [0, 1],
+      [0, 2]
+    ],
+    scale: 0.8
+  },
+  pulsar: {
+    name: 'pulsar',
+    coordinates: [
+      [0, 2], [0, 3], [0, 9], [0, 10],
+      [1, 3], [1, 4], [1, 8], [1, 9],
+      [2, 0], [2, 3], [2, 5], [2, 7], [2, 9], [2, 12],
+      [3, 0], [3, 1], [3, 2], [3, 4], [3, 5], [3, 7], [3, 8], [3, 10], [3, 11], [3, 12],
+      [4, 1], [4, 3], [4, 5], [4, 7], [4, 9], [4, 11],
+      [5, 2], [5, 3], [5, 4], [5, 8], [5, 9], [5, 10],
+      [7, 2], [7, 3], [7, 4], [7, 8], [7, 9], [7, 10],
+      [8, 1], [8, 3], [8, 5], [8, 7], [8, 9], [8, 11],
+      [9, 0], [9, 1], [9, 2], [9, 4], [9, 5], [9, 7], [9, 8], [9, 10], [9, 11], [9, 12],
+      [10, 0], [10, 3], [10, 5], [10, 7], [10, 9], [10, 12],
+      [11, 3], [11, 4], [11, 8], [11, 9],
+      [12, 2], [12, 3], [12, 9], [12, 10],
+    ],
+    scale: 0.8
+  },
+  beehive: {
+    name: 'beehive',
+    coordinates: [
+      [1, 0], [2, 0],
+      [0, 1], [3, 1],
+      [1, 2], [2, 2]
+    ],
+    scale: 0.8
+  },
+  tub: {
+    name: 'tub',
+    coordinates: [
+      [1, 0],
+      [0, 1], [2, 1],
+      [1, 2]
+    ],
+    scale: 0.8
+  },
+  puffer1: {
+    name: 'puffer1',
+    coordinates: [
+      [0, 0], [1, 0], [2, 0],
+      [0, 1], [2, 1],
+      [0, 2], [1, 2], [2, 2],
+      [3, 3], [4, 3], [5, 3],
+      [3, 4], [5, 4],
+      [3, 5], [4, 5], [5, 5]
+    ],
+    scale: 0.8
+  }
+};
+
+// Helper function to calculate pattern dimensions
+function getPatternDimensions(coordinates: [number, number][]): { width: number, height: number } {
+  const minX = Math.min(...coordinates.map(([x]) => x));
+  const maxX = Math.max(...coordinates.map(([x]) => x));
+  const minY = Math.min(...coordinates.map(([, y]) => y));
+  const maxY = Math.max(...coordinates.map(([, y]) => y));
+  
+  return {
+    width: (maxX - minX + 1) * 62, // 50 (cell width) + 12 (gap)
+    height: (maxY - minY + 1) * 62
+  };
+}
+
+// Function to create a pattern object
+function createPatternObject(pattern: Pattern, position: [number, number]) {
+  const { width, height } = getPatternDimensions(pattern.coordinates);
+  const scale = pattern.scale || 0.6;
+  
+  // Create squares for the pattern
+  const squares = pattern.coordinates.map(([x, y]) => {
+    const normalizedX = x * 62; // 50 (width) + 12 (gap)
+    const normalizedY = y * 62;
+    return (
+      <Rect
+        width={50}
+        height={50}
+        x={normalizedX}
+        y={normalizedY}
+        fill={Colors.whiteLabel}
+        radius={8}
+      />
+    );
+  });
+
+  return {
+    layout: createRef<Layout>(),
+    squares,
+    position,
+    scale,
+    width: width * scale,
+    height: height * scale,
+    name: pattern.name,
+    label: createRef<Txt>()
+  };
+}
+
+// Function to position patterns in a column
+function positionPatternsInColumn(patterns: Pattern[], startY: number, margin: number, align: 'left' | 'right' = 'left') {
+  let currentY = startY;
+  const objects = [];
+
+  for (const pattern of patterns) {
+    const obj = createPatternObject(pattern, [0, currentY]);
+    currentY += obj.height + margin;
+    objects.push(obj);
+  }
+
+  return objects;
+}
+
 export default makeScene2D(function* (view) {
   view.lineHeight(64);
   const title = createRef<Txt>();
@@ -210,17 +437,17 @@ if (count == 2 && isAlive) {
   yield* beginSlide('show-grid');
 
   // Function to update grid with a given state
-  function* updateGrid(currentState: boolean[][], previousState: boolean[][], show_previous: boolean = true) {
+  function* updateGrid(currentState: boolean[][], previousState: boolean[][], show_previous: boolean = true, delay: number = 0.5) {
     yield* all(
       ...grid().children().flatMap((row, i) =>
         (row as Layout).children().map((cell, j) => {
           const rect = cell as Rect;
           if (currentState[i][j]) {
-            return rect.fill(Colors.whiteLabel, 0.5);
+            return rect.fill(Colors.whiteLabel, delay);
           } else if (previousState[i][j] && show_previous) {
-            return rect.fill('#6c3b3b', 0.5); // Red shade for recently dead cells
+            return rect.fill('#4c3131', delay); // Red shade for recently dead cells
           } else {
-            return rect.fill(Colors.surface, 0.5);
+            return rect.fill(Colors.surface, delay);
           }
         })
       )
@@ -264,8 +491,275 @@ if (count == 2 && isAlive) {
 
   yield* beginSlide('semaphore-iteration');
 
+  // Do 10 iterations automatically
+  for (let i = 1; i <= 10; i++) {
+    yield* updateGrid(
+      getGameOfLifeState(semaphore, i),
+      getPreviousState(semaphore, i), 
+      true,
+      0.1
+    );
+    yield* waitFor(0.2);
+  }
+
   yield* beginSlide('semaphore-after-loop');
 
- 
+  // Clear the grid
+  yield* updateGrid(
+    Array(13).fill(null).map(() => Array(23).fill(false)),
+    Array(13).fill(null).map(() => Array(23).fill(false)),
+    false
+  );
+  yield* beginSlide('clear-grid');
 
+  // Create a glider in the bottom left
+  const glider: [number, number][] = [
+    [3, 10], [4, 10], [5, 10],  // Horizontal line
+    [5, 11],                    // Right cell
+    [4, 12]                     // Middle cell
+  ];
+
+  yield* updateGrid(
+    getGameOfLifeState(glider, 0),
+    getPreviousState(glider, 0),
+    false
+  );
+  yield* beginSlide('glider-born');
+
+  // Show first iteration
+  yield* updateGrid(
+    getGameOfLifeState(glider, 1),
+    getPreviousState(glider, 1)
+  );
+  yield* beginSlide('glider-iteration-1');
+
+  // Show second iteration
+  yield* updateGrid(
+    getGameOfLifeState(glider, 2),
+    getPreviousState(glider, 2)
+  );
+  yield* beginSlide('glider-iteration-2');
+
+  // Show third iteration
+  yield* updateGrid(
+    getGameOfLifeState(glider, 3),
+    getPreviousState(glider, 3)
+  );
+  yield* beginSlide('glider-iteration-3');
+
+  // Do 10 more iterations automatically
+  for (let i = 4; i <= 40; i++) {
+    yield* updateGrid(
+      getGameOfLifeState(glider, i),
+      getPreviousState(glider, i),
+      true,
+      0.0
+    );
+    yield* waitFor(0.1);
+  }
+  yield* beginSlide('glider-after-loop');
+
+  // Create and show the glider object
+  const {gliderLayout, squares} = createGliderObject(glider);
+  
+  // Add the glider layout to the view
+  view.add(
+    <Layout
+      ref={gliderLayout}
+      position={[124, -302]}
+      opacity={0}
+      scale={1}
+    >
+      {squares}
+    </Layout>
+  );
+
+  // Add label
+  const gliderLabel = createRef<Txt>();
+  view.add(
+    <Txt
+      ref={gliderLabel}
+      {...textStyles.h2}
+      position={[300, -302]}
+      opacity={0}
+      textAlign="left"
+    >
+      glider
+    </Txt>
+  );
+
+  // First fade out grid and fade in glider
+  yield* all(
+    grid().opacity(0, 0.5),
+    gliderLayout().opacity(1, 0.5)
+  );
+  
+  // Then move and scale glider
+  gliderLabel().position([-850 + (62 * 5 * 0.6) + 50, -302]); // glider position + width + margin
+  yield* all(
+    gliderLayout().position([-850, -302], 0.5), // -1920/2 + 50 + (62 * 5)/2
+    gliderLayout().scale(0.8, 0.5),
+  );
+  yield* gliderLabel().opacity(1, 0.5)
+  yield* beginSlide('glider-with-label');
+
+  // Create and position all objects
+  const margin = 80;
+
+  // Create pattern objects with direct positioning
+  const spaceshipObj = createPatternObject(patterns.spaceship, [-view.width()/2 + margin, -view.height()/2 + 520]);
+  view.add(
+    <Layout
+      ref={spaceshipObj.layout}
+      position={spaceshipObj.position}
+      scale={spaceshipObj.scale}
+      opacity={0}
+    >
+      {spaceshipObj.squares}
+    </Layout>
+  );
+  view.add(
+    <Txt
+      ref={spaceshipObj.label}
+      {...textStyles.h2}
+      position={[-view.width()/2 + 420, -view.height()/2 + 500]}
+      opacity={0}
+      textAlign="left"
+    >
+      spaceship
+    </Txt>
+  );
+
+  const blinkerObj = createPatternObject(patterns.blinker, [-view.width()/2 + margin + 100, -view.height()/2 + 880]);
+  view.add(
+    <Layout
+      ref={blinkerObj.layout}
+      position={blinkerObj.position}
+      scale={blinkerObj.scale}
+      opacity={0}
+    >
+      {blinkerObj.squares}
+    </Layout>
+  );
+  view.add(
+    <Txt
+      ref={blinkerObj.label}
+      {...textStyles.h2}
+      position={[-view.width()/2 + 350, -view.height()/2 + 880]}
+      opacity={0}
+      textAlign="left"
+    >
+      blinker
+    </Txt>
+  );
+
+  const beehiveObj = createPatternObject(patterns.beehive, [view.width()/2 - margin - 150, -view.height()/2 + margin + 160]);
+  view.add(
+    <Layout
+      ref={beehiveObj.layout}
+      position={beehiveObj.position}
+      scale={beehiveObj.scale}
+      opacity={0}
+    >
+      {beehiveObj.squares}
+    </Layout>
+  );
+  view.add(
+    <Txt
+      ref={beehiveObj.label}
+      {...textStyles.h2}
+      position={[view.width()/2 - margin - 310, -view.height()/2 + margin + 210]}
+      opacity={0}
+      textAlign="left"
+    >
+      beehive
+    </Txt>
+  );
+
+  const tubObj = createPatternObject(patterns.tub, [view.width()/2 - margin - 150, -view.height()/2 + margin + 440]);
+  view.add(
+    <Layout
+      ref={tubObj.layout}
+      position={tubObj.position}
+      scale={tubObj.scale}
+      opacity={0}
+    >
+      {tubObj.squares}
+    </Layout>
+  );
+  view.add(
+    <Txt
+      ref={tubObj.label}
+      {...textStyles.h2}
+      position={[view.width()/2 - margin - 270, -view.height()/2 + margin + 485]}
+      opacity={0}
+      textAlign="left"
+    >
+      tub
+    </Txt>
+  );
+
+  const pufferObj = createPatternObject(patterns.puffer1, [view.width()/2 - margin - 250, -view.height()/2 + margin + 660]);
+  view.add(
+    <Layout
+      ref={pufferObj.layout}
+      position={pufferObj.position}
+      scale={pufferObj.scale}
+      opacity={0}
+    >
+      {pufferObj.squares}
+    </Layout>
+  );
+  view.add(
+    <Txt
+      ref={pufferObj.label}
+      {...textStyles.h2}
+      position={[view.width()/2 - margin - 270, -view.height()/2 + margin + 860]}
+      opacity={0}
+      textAlign="left"
+    >
+      puffer
+    </Txt>
+  );
+
+  const pulsarObj = createPatternObject(patterns.pulsar, [-305, -view.height()/2 + 380]);
+  view.add(
+    <Layout
+      ref={pulsarObj.layout}
+      position={pulsarObj.position}
+      scale={pulsarObj.scale}
+      opacity={0}
+    >
+      {pulsarObj.squares}
+    </Layout>
+  );
+  view.add(
+    <Txt
+      ref={pulsarObj.label}
+      {...textStyles.h2}
+      position={[0, -210]}
+      opacity={0}
+      textAlign="center"
+    >
+      pulsar
+    </Txt>
+  );
+
+  // Animate all objects appearing
+  yield* all(
+    spaceshipObj.layout().opacity(1, 0.5),
+    spaceshipObj.label().opacity(1, 0.5),
+    blinkerObj.layout().opacity(1, 0.5),
+    blinkerObj.label().opacity(1, 0.5),
+    pulsarObj.layout().opacity(1, 0.5),
+    pulsarObj.label().opacity(1, 0.5),
+    beehiveObj.layout().opacity(1, 0.5),
+    beehiveObj.label().opacity(1, 0.5),
+    tubObj.layout().opacity(1, 0.5),
+    tubObj.label().opacity(1, 0.5),
+    pufferObj.layout().opacity(1, 0.5),
+    pufferObj.label().opacity(1, 0.5)
+  );
+
+  yield* beginSlide('all-objects');
 }); 
