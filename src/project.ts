@@ -13,7 +13,7 @@ import testScene from './scenes/test-scene?scene';
 Code.defaultHighlighter = new LezerHighlighter(parser);
 
 export default makeProject({
-  // scenes: [intro, oneDimension, gameOfLife, continuousSpace ],
-  scenes: [continuousSpace ],
+  scenes: [intro, oneDimension, gameOfLife, continuousSpace ],
+  // scenes: [continuousSpace ],
   // scenes: [testScene],
 });
