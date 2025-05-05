@@ -1,11 +1,11 @@
 import {makeScene2D, Txt, Layout, Rect, Code} from '@motion-canvas/2d';
-import {all, createRef, beginSlide, waitFor} from '@motion-canvas/core';
+import {all, createRef, beginSlide, waitFor, loopUntil} from '@motion-canvas/core';
 import {Colors, textStyles} from './shared';
 
 // Game of Life implementation
 function getGameOfLifeState(initialState: [number, number][], iteration: number): boolean[][] {
-  const width = 23;
-  const height = 13;
+  const width = 43;
+  const height = 33;
   
   // Initialize grid with all cells dead
   let grid = Array(height).fill(null).map(() => Array(width).fill(false));
@@ -52,7 +52,7 @@ function getGameOfLifeState(initialState: [number, number][], iteration: number)
 
 // Helper function to get previous state
 function getPreviousState(initialState: [number, number][], iteration: number): boolean[][] {
-  if (iteration === 0) return Array(13).fill(null).map(() => Array(23).fill(false));
+  if (iteration === 0) return Array(33).fill(null).map(() => Array(43).fill(false));
   return getGameOfLifeState(initialState, iteration - 1);
 }
 
@@ -184,7 +184,7 @@ const patterns: Record<string, Pattern> = {
       [5, 2], [5, 3], [5, 4], [5, 8], [5, 9], [5, 10],
       [7, 2], [7, 3], [7, 4], [7, 8], [7, 9], [7, 10],
       [8, 1], [8, 3], [8, 5], [8, 7], [8, 9], [8, 11],
-      [9, 0], [9, 1], [9, 2], [9, 4], [9, 5], [9, 7], [9, 8], [9, 10], [9, 11], [9, 12],
+      [9, 0], [9, 1], [9, 2], [9, 4], [9, 5], [9, 0], [9, 7], [9, 8], [9, 10], [9, 11], [9, 12],
       [10, 0], [10, 3], [10, 5], [10, 7], [10, 9], [10, 12],
       [11, 3], [11, 4], [11, 8], [11, 9],
       [12, 2], [12, 3], [12, 9], [12, 10],
@@ -374,14 +374,14 @@ if (count == 2 && isAlive) {
       opacity={0}
       layout
     >
-      {Array.from({length: 13}, (_, i) => (
+      {Array.from({length: 33}, (_, i) => (
         <Layout
           key={i.toString()}
           direction="row"
           gap={12}
           alignItems="center"
         >
-          {Array.from({length: 23}, (_, j) => (
+          {Array.from({length: 43}, (_, j) => (
             <Rect
               key={`${i}-${j}`}
               width={50}
@@ -455,8 +455,8 @@ if (count == 2 && isAlive) {
   }
 
   // Make central cell alive
-  const centerX = 11; // Middle of 23 cells
-  const centerY = 6;  // Middle of 13 cells
+  const centerX = 21; // Middle of 43 cells
+  const centerY = 16;  // Middle of 33 cells
   const initialState: [number, number][] = [[centerX, centerY]];
   
   // Update grid with initial state
@@ -506,8 +506,8 @@ if (count == 2 && isAlive) {
 
   // Clear the grid
   yield* updateGrid(
-    Array(13).fill(null).map(() => Array(23).fill(false)),
-    Array(13).fill(null).map(() => Array(23).fill(false)),
+    Array(33).fill(null).map(() => Array(43).fill(false)),
+    Array(33).fill(null).map(() => Array(43).fill(false)),
     false
   );
   yield* beginSlide('clear-grid');
@@ -762,4 +762,112 @@ if (count == 2 && isAlive) {
   );
 
   yield* beginSlide('all-objects');
+
+  // Clear the view for the next slide
+  yield* all(
+    spaceshipObj.layout().opacity(0, 0.5),
+    spaceshipObj.label().opacity(0, 0.5),
+    blinkerObj.layout().opacity(0, 0.5),
+    blinkerObj.label().opacity(0, 0.5),
+    pulsarObj.layout().opacity(0, 0.5),
+    pulsarObj.label().opacity(0, 0.5),
+    beehiveObj.layout().opacity(0, 0.5),
+    beehiveObj.label().opacity(0, 0.5),
+    tubObj.layout().opacity(0, 0.5),
+    tubObj.label().opacity(0, 0.5),
+    pufferObj.layout().opacity(0, 0.5),
+    pufferObj.label().opacity(0, 0.5),
+
+    // Clearing the glider as well.
+    gliderLayout().opacity(0, 0.5),
+    gliderLabel().opacity(0, 0.5) ,
+
+    title().opacity(0, 0.5)
+  );
+
+  // Create a new grid for the running simulation
+  const runningGrid = createRef<Layout>();
+  view.add(
+    <Layout
+      ref={runningGrid}
+      direction="column"
+      gap={12}
+      alignItems="center"
+      position={[0, 0]}
+      opacity={0}
+      scale={0.5}
+      layout
+    >
+      {Array.from({length: 33}, (_, i) => (
+        <Layout
+          key={"loop-row-" + i.toString()}
+          direction="row"
+          gap={12}
+          alignItems="center"
+        >
+          {Array.from({length: 43}, (_, j) => (
+            <Rect
+              key={`loop-${i}-${j}`}
+              width={50}
+              height={50}
+              fill={Colors.surface}
+              radius={8}
+            />
+          ))}
+        </Layout>
+      ))}
+    </Layout>
+  );
+
+  // Fade in the grid
+  yield* runningGrid().opacity(1, 0.5);
+
+  // Create a random initial state
+  const randomState: [number, number][] = [];
+  for (let i = 0; i < 33; i++) {
+    for (let j = 0; j < 43; j++) {
+      if (Math.random() < 0.3) { // 30% chance of being alive
+        randomState.push([j, i]);
+      }
+    }
+  }
+
+  // Function to update the grid with a given state
+  function* updateRunningGrid(currentState: boolean[][], previousState: boolean[][], show_previous: boolean = true, delay: number = 0.5) {
+    yield* all(
+      ...runningGrid().children().flatMap((row, i) =>
+        (row as Layout).children().map((cell, j) => {
+          const rect = cell as Rect;
+          if (currentState[i][j]) {
+            return rect.fill(Colors.whiteLabel, delay);
+          } else if (previousState[i][j] && show_previous) {
+            return rect.fill('#4c3131', delay); // Red shade for recently dead cells
+          } else {
+            return rect.fill(Colors.surface, delay);
+          }
+        })
+      )
+    );
+  }
+  
+  // set the random state to the grid
+  yield* updateRunningGrid(getGameOfLifeState(randomState, 0), getPreviousState(randomState, 0), false, 0);
+
+  yield* beginSlide('grid-in');
+  
+  yield* waitFor(0.5);
+ 
+
+
+  // Run the simulation for 20 iterations
+  for (let iteration = 0; iteration < 20; iteration++) {
+    const currentState = getGameOfLifeState(randomState, iteration);
+    const previousState = getPreviousState(randomState, iteration);
+    
+    yield* updateRunningGrid(currentState, previousState, true, 0.1);
+    yield* waitFor(0.2);
+  }
+
+  yield* beginSlide('next-slide');
+
 }); 
