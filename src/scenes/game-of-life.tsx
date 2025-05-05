@@ -1,5 +1,5 @@
 import {makeScene2D, Txt, Layout, Rect, Code} from '@motion-canvas/2d';
-import {all, createRef, beginSlide, waitFor, loopUntil} from '@motion-canvas/core';
+import {all, createRef, beginSlide, waitFor, loopUntil, loopFor, loop} from '@motion-canvas/core';
 import {Colors, textStyles} from './shared';
 
 // Game of Life implementation
@@ -184,7 +184,7 @@ const patterns: Record<string, Pattern> = {
       [5, 2], [5, 3], [5, 4], [5, 8], [5, 9], [5, 10],
       [7, 2], [7, 3], [7, 4], [7, 8], [7, 9], [7, 10],
       [8, 1], [8, 3], [8, 5], [8, 7], [8, 9], [8, 11],
-      [9, 0], [9, 1], [9, 2], [9, 4], [9, 5], [9, 0], [9, 7], [9, 8], [9, 10], [9, 11], [9, 12],
+      [9, 0], [9, 1], [9, 2], [9, 4], [9, 5], [9, 7], [9, 8], [9, 10], [9, 11], [9, 12],
       [10, 0], [10, 3], [10, 5], [10, 7], [10, 9], [10, 12],
       [11, 3], [11, 4], [11, 8], [11, 9],
       [12, 2], [12, 3], [12, 9], [12, 10],
@@ -283,6 +283,39 @@ function positionPatternsInColumn(patterns: Pattern[], startY: number, margin: n
   return objects;
 }
 
+// Function to calculate next state from current boolean grid
+function calculateNextState(currentState: boolean[][]): boolean[][] {
+  const height = currentState.length;
+  const width = currentState[0].length;
+  const newGrid = Array(height).fill(null).map(() => Array(width).fill(false));
+  
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      // Count live neighbors
+      let count = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx >= 0 && nx < width && ny >= 0 && ny < height && currentState[ny][nx]) {
+            count++;
+          }
+        }
+      }
+      
+      // Apply Game of Life rules
+      if (currentState[y][x]) {
+        newGrid[y][x] = count === 2 || count === 3;
+      } else {
+        newGrid[y][x] = count === 3;
+      }
+    }
+  }
+  
+  return newGrid;
+}
+
 export default makeScene2D(function* (view) {
   view.lineHeight(64);
   const title = createRef<Txt>();
@@ -374,14 +407,14 @@ if (count == 2 && isAlive) {
       opacity={0}
       layout
     >
-      {Array.from({length: 33}, (_, i) => (
+      {Array.from({length: 13}, (_, i) => (
         <Layout
           key={i.toString()}
           direction="row"
           gap={12}
           alignItems="center"
         >
-          {Array.from({length: 43}, (_, j) => (
+          {Array.from({length: 23}, (_, j) => (
             <Rect
               key={`${i}-${j}`}
               width={50}
@@ -455,8 +488,8 @@ if (count == 2 && isAlive) {
   }
 
   // Make central cell alive
-  const centerX = 21; // Middle of 43 cells
-  const centerY = 16;  // Middle of 33 cells
+  const centerX = 11; // Middle of 23 cells
+  const centerY = 6;  // Middle of 13 cells
   const initialState: [number, number][] = [[centerX, centerY]];
   
   // Update grid with initial state
@@ -506,8 +539,8 @@ if (count == 2 && isAlive) {
 
   // Clear the grid
   yield* updateGrid(
-    Array(33).fill(null).map(() => Array(43).fill(false)),
-    Array(33).fill(null).map(() => Array(43).fill(false)),
+    Array(23).fill(null).map(() => Array(33).fill(false)),
+    Array(23).fill(null).map(() => Array(33).fill(false)),
     false
   );
   yield* beginSlide('clear-grid');
@@ -858,16 +891,14 @@ if (count == 2 && isAlive) {
   yield* waitFor(0.5);
  
 
-
-  // Run the simulation for 20 iterations
-  for (let iteration = 0; iteration < 20; iteration++) {
-    const currentState = getGameOfLifeState(randomState, iteration);
-    const previousState = getPreviousState(randomState, iteration);
-    
-    yield* updateRunningGrid(currentState, previousState, true, 0.1);
+  // Run the simulation until the next slide
+  let currentState = getGameOfLifeState(randomState, 0);
+  yield loop(function* () {
+    currentState = calculateNextState(currentState);
+    yield* updateRunningGrid(currentState, currentState, false, 0.1);
     yield* waitFor(0.2);
-  }
+  });
 
-  yield* beginSlide('next-slide');
+  yield* beginSlide('end-loop');
 
 }); 
