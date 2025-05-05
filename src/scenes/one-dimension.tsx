@@ -140,10 +140,8 @@ export default makeScene2D(function* (view) {
   grid().opacity(0);
 
   // First slide: Move title up and show description
-  yield* all(
-    title().position.y(-view.height()/2 + 150, 1),
-    description().opacity(1, 0.5)
-  );
+  yield* title().position.y(-view.height()/2 + 150, 1)
+  yield* description().opacity(1, 0.5)
   yield* beginSlide('description');
 
   // Show automata
@@ -166,20 +164,18 @@ export default makeScene2D(function* (view) {
     const newState = getWolframState(i);
     yield* all(
       ...automata().children().map((cell, j) => 
-        (cell as Rect).fill(newState[j] ? Colors.whiteLabel : Colors.surface, 0.2)
+        (cell as Rect).fill(newState[j] ? Colors.whiteLabel : Colors.surface, 0.35)
       )
     );
   }
 
   yield* beginSlide('group-of-all');
 
-  // First move the automata down
-  yield* automata().position.y(430, 0.5);
-
-  // Then fade out automata while showing grid
+  // First move the automata down, then fade out automata while showing grid
+  yield* automata().position.y(430, 1);
   yield* all(
-    automata().opacity(0, 0.5),
-    grid().opacity(1, 0.5)
+    automata().opacity(0, 1),
+    grid().opacity(1, 1)
   );
 
   yield* beginSlide('end');
