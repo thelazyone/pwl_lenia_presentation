@@ -887,9 +887,6 @@ if (count == 2 && isAlive) {
   yield* updateRunningGrid(getGameOfLifeState(randomState, 0), getPreviousState(randomState, 0), false, 0);
 
   yield* beginSlide('grid-in');
-  
-  yield* waitFor(0.5);
- 
 
   // Run the simulation until the next slide
   let currentState = getGameOfLifeState(randomState, 0);
@@ -901,4 +898,18 @@ if (count == 2 && isAlive) {
 
   yield* beginSlide('end-loop');
 
+  // First fade out everything except title
+  yield* all(
+    runningGrid().opacity(0, 0.5),
+    title().opacity(1, 0.5),
+  );
+
+  // Then move title back to center and change text
+  yield* all(
+    title().position.y(0, 1),
+    title().text("Continuous Space", 1)
+  );
+  yield* waitFor(0.5);
+
+  yield* beginSlide('transition-to-continuous-space');
 }); 
