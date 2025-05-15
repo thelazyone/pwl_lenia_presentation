@@ -9,12 +9,14 @@ import continuousSpace from './scenes/continuous-space?scene';
 import papers from './scenes/papers?scene';
 
 import testScene from './scenes/test-scene?scene';
+import implementation from './scenes/implementation?scene';
+import shaders from './scenes/shaders?scene';
 
 
 Code.defaultHighlighter = new LezerHighlighter(parser);
 
 export default makeProject({
-  scenes: [intro, oneDimension, gameOfLife, continuousSpace, papers],
-  // scenes: [continuousSpace ],
+  // scenes: [intro, oneDimension, gameOfLife, continuousSpace, papers],
+  scenes: [ papers, implementation, shaders],
   // scenes: [testScene],
 });

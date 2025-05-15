@@ -1,5 +1,5 @@
 import {makeScene2D, Txt, Rect, Layout, Img} from '@motion-canvas/2d';
-import {all, createRef, beginSlide, waitFor} from '@motion-canvas/core';
+import {all, createRef, beginSlide, Reference} from '@motion-canvas/core';
 import {Colors, textStyles} from './shared';
 import distancePattern from '../images/distance-pattern.png';
 
@@ -178,6 +178,43 @@ export default makeScene2D(function* (view) {
     </Layout>
   );
 
+  // Given the five labels that are to be barred, creating five bars that 
+  // will be animated to fade in on top of the labels.
+  // The bars are created with the coordinates of the labels and the width each text label is.
+  function createBarFromLabel(labelRef: Reference<Txt>) {
+    const barRect = createRef<Rect>();
+    view.add(
+      <Rect
+        ref={barRect}
+        width={labelRef().width()}
+        height={4}
+        fill="#ff6b6b"
+        position={[labelRef().position.x(), labelRef().position.y() - labelRef().height()/2 - 10]}
+        opacity={0}
+        zIndex={2}
+        radius={2}  
+      />
+    );
+    return barRect;
+  }
+
+  // Setting opacity to zero and the y position that didn't work before
+  const discretespaceBar = createBarFromLabel(discreteSpace);
+  discretespaceBar().opacity(0); 
+  discretespaceBar().position.y(-296) 
+  const discretetimeBar = createBarFromLabel(discreteTime);
+  discretetimeBar().opacity(0);
+  discretetimeBar().position.y(-296) 
+  const discretestatesBar = createBarFromLabel(discreteStates);
+  discretestatesBar().opacity(0);
+  discretestatesBar().position.y(-296) 
+  const localinteractionBar = createBarFromLabel(localInteraction);
+  localinteractionBar().opacity(0);
+  localinteractionBar().position.y(-209) 
+  const discretedynamicsBar = createBarFromLabel(discreteDynamics);
+  discretedynamicsBar().opacity(0);
+  discretedynamicsBar().position.y(-209) 
+
   // Small Grid (5x5)
   view.add(
     <Layout
@@ -241,23 +278,33 @@ export default makeScene2D(function* (view) {
   // Showing a larger grid, first resizing the current one and then replacing it with a double fade.
   yield* smallGrid().scale(0.5, 0.5);
 
+  const barred_color = '#cbcbcb';
+
+  // Animate all labels to red and show bars
   yield* all(
     smallGrid().opacity(0, 0.5),
     largeGridFlat().opacity(1, 0.5),
-    localInteraction().fill('#683535', 0.5)
+    localInteraction().fill(barred_color, 0.5),
+    localinteractionBar().fill(barred_color, 0.5),  
+    localinteractionBar().opacity(1, 0.5),
   );
   yield* beginSlide('large-grid');
 
   yield* all(
     largeGridFlat().opacity(0, 0.5),
     largeGrid().opacity(1, 0.5),
-    discreteDynamics().fill('#683535', 0.5)
+    discreteDynamics().fill(barred_color, 0.5),
+    discretedynamicsBar().fill(barred_color, 0.5),
+    discretedynamicsBar().opacity(1, 0.5),  
   );
 
   yield* beginSlide('large-grid-ring');
 
-
-  yield* discreteStates().fill('#683535', 0.5)
+  yield* all(
+    discreteStates().fill(barred_color, 0.5),
+    discretestatesBar().fill(barred_color, 0.5),
+    discretestatesBar().opacity(1, 0.5),
+  );
   yield* beginSlide('no-states');
 
   // Huge grid is in a smaller scale!
@@ -283,8 +330,12 @@ export default makeScene2D(function* (view) {
   yield* all(
     hugeGridWide().opacity(0, 0.5),
     continuousGrid().opacity(1, 0.5),
-    discreteSpace().fill('#683535', 0.5),
-    discreteTime().fill('#683535', 0.5)
+    discreteSpace().fill(barred_color, 0.5),
+    discretespaceBar().fill(barred_color, 0.5),
+    discretespaceBar().opacity(1, 0.5),
+    discreteTime().fill(barred_color, 0.5),
+    discretetimeBar().fill(barred_color, 0.5),
+    discretetimeBar().opacity(1, 0.5),
   );
 
   yield* beginSlide('continuous-grid');
@@ -349,6 +400,11 @@ export default makeScene2D(function* (view) {
   yield* beginSlide('conclusions2');
 
   yield* all(
+    discretespaceBar().opacity(0, 0.5),
+    discretetimeBar().opacity(0, 0.5),
+    discretestatesBar().opacity(0, 0.5),
+    localinteractionBar().opacity(0, 0.5),
+    discretedynamicsBar().opacity(0, 0.5),
     continuousGrid().opacity(0, 0.5),
     conclusionLayout().opacity(0, 0.5),
     rulesLayout().opacity(0, 0.5),
