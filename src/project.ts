@@ -11,12 +11,13 @@ import papers from './scenes/papers?scene';
 import testScene from './scenes/test-scene?scene';
 import implementation from './scenes/implementation?scene';
 import shaders from './scenes/shaders?scene';
+import conclusions from './scenes/conclusions?scene';
 
 
 Code.defaultHighlighter = new LezerHighlighter(parser);
 
 export default makeProject({
   // scenes: [intro, oneDimension, gameOfLife, continuousSpace, papers],
-  scenes: [ papers, implementation, shaders],
+  scenes: [ papers, implementation, shaders, conclusions],
   // scenes: [testScene],
 });

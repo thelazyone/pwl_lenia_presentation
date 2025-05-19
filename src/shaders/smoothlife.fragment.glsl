@@ -8,7 +8,9 @@ out vec4 fragColor;
 // SmoothLife parameters
 const float PI = 3.14159265;
 const float dt = 0.30; 
-const vec2 r = vec2(12.0, 4.0);  // x = outer radius, y = inner radius
+
+// 12-4 is pretty great but a bit slow
+const vec2 r = vec2(12.0, 3.8);  // x = outer radius, y = inner radius
 
 // SmoothLifeL rules
 // const float b1 = 0.257;
