@@ -102,7 +102,7 @@ export function createSmoothLifeMaterial() {
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const index = (y * width + x) * 4;
-                initialData[index] = Math.random() > 0.7 ? 1.0 : 0.0; // Red channel = state
+                initialData[index] = Math.random() > 0.3 ? 1.0 : 0.0; // Red channel = state
                 initialData[index + 1] = 0.0; // Green unused
                 initialData[index + 2] = 0.0; // Blue unused
                 initialData[index + 3] = 1.0; // Alpha always 1

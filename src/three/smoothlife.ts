@@ -70,7 +70,6 @@ function render(renderer: WebGLRenderer, scene: Scene, camera: Camera) {
 
     // We're computing a new frame - reset flag
     smoothLife.shouldAdvance(false);
-    console.log("Computing next generation");
     
     // CRITICAL: Make sure input texture is locked before rendering
     const previousTexture = renderTargets.previous.texture;

@@ -139,12 +139,11 @@ export default makeScene2D(function* (view) {
   // });
   yield loop(function* () {
     frameCount++;
-    console.log(`Frame ${frameCount}`);
     
     // Only call advanceFrame() which is now optimized
     smoothLife.advanceFrame();
 
-    yield* waitFor(.5); // Wait half a second between frames
+    yield* waitFor(.05); // Wait half a second between frames
   });
 
 
