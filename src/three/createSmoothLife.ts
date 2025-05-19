@@ -9,6 +9,9 @@ import smoothlifeVertex from '../shaders/smoothlife.vertex.glsl?raw';
 const life_width = 1080;
 const life_height = life_width;
 
+// Track if we're using a stale context
+let isContextValid = true;
+
 export function createSmoothLifeMaterial() {
     const time = createSignal(0);
     const color = MCColor.createSignal('#ff0000');
@@ -56,140 +59,124 @@ export function createSmoothLifeMaterial() {
         time(time() + 1);
         shouldAdvance(true);
         needsUpdate(true);
+        
+        // Keep context valid when actively rendering
+        isContextValid = true;
     }
 
     function setup() {
         console.log(`DEBUG: Starting setup`);
         
+        // Mark the context as valid
+        isContextValid = true;
+        
         // Use fixed dimensions
         const width = life_width;
         const height = life_height;
-        
-        // Clean up existing resources before creating new ones
+
+        // CLEAN APPROACH: Fully remove old targets first
         if ((material as any).renderTargets?.current) {
-            console.log("Cleaning up previous render targets");
+            // First, clear any references to the texture in the shader
+            material.uniforms.previousState.value = null;
+            
+            // Get old targets
             const oldTargets = (material as any).renderTargets;
             
-            // Dispose textures and render targets
-            oldTargets.current.dispose();
-            oldTargets.previous.dispose();
+            // Clear references in the material
+            (material as any).renderTargets = {
+                current: null,
+                previous: null
+            };
             
-            if (oldTargets.current.texture) oldTargets.current.texture.dispose();
-            if (oldTargets.previous.texture) oldTargets.previous.texture.dispose();
-            
-            // Clear reference to previous texture
-            material.uniforms.previousState.value = null;
-        }
-        
-        // Skip re-initialization if already set up
-        const currentResolutionValue = material.uniforms.resolution.value;
-        if (currentResolutionValue && 
-            currentResolutionValue.x === width && 
-            currentResolutionValue.y === height &&
-            (material as any).renderTargets?.current) {
-            console.log("Skipping re-initialization - already at correct resolution");
-            return;
+            // Now dispose the old targets
+            try {
+                if (oldTargets.current) oldTargets.current.dispose();
+                if (oldTargets.previous) oldTargets.previous.dispose();
+            } catch (e) {
+                console.warn("Error disposing old targets:", e);
+            }
         }
         
         // Update the resolution uniform
         resolution(new THREE.Vector2(width, height));
         material.uniforms.resolution.value.set(width, height);
         
-        // Create initial data with consistent dimensions
+        // Create initial data
         console.log(`Initializing data (${width}x${height})`);
         const initialData = new Float32Array(width * height * 4);
         
-        // Fill with random state data (only in red channel)
+        // Fill with random pattern
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const index = (y * width + x) * 4;
-                initialData[index] = Math.random() > 0.3 ? 1.0 : 0.0; // Red channel = state
+                initialData[index] = Math.random() > 0.5 ? 1.0 : 0.0; // Red channel = state
                 initialData[index + 1] = 0.0; // Green unused
                 initialData[index + 2] = 0.0; // Blue unused
                 initialData[index + 3] = 1.0; // Alpha always 1
             }
         }
 
-        // Fixed settings for all textures and render targets
-        const textureSettings = {
+        // Settings for render targets - create fresh each time
+        const rtSettings = {
             format: THREE.RGBAFormat,
             type: THREE.FloatType,
-            minFilter: THREE.NearestFilter,
+            minFilter: THREE.NearestFilter, 
             magFilter: THREE.NearestFilter,
             wrapS: THREE.ClampToEdgeWrapping,
             wrapT: THREE.ClampToEdgeWrapping,
-            generateMipmaps: false
-        };
-        
-        // Create initial texture
-        const initialTexture = new THREE.DataTexture(
-            initialData, 
-            width, 
-            height,
-            textureSettings.format,
-            textureSettings.type
-        );
-        
-        // Apply all settings to the texture
-        initialTexture.minFilter = textureSettings.minFilter;
-        initialTexture.magFilter = textureSettings.magFilter;
-        initialTexture.wrapS = textureSettings.wrapS;
-        initialTexture.wrapT = textureSettings.wrapT;
-        initialTexture.generateMipmaps = textureSettings.generateMipmaps;
-        initialTexture.needsUpdate = true;
-        
-        console.log(`Created initial texture`);
-        
-        // Create a clone of the initial texture for the second buffer
-        // We do this by creating a new texture with the same data
-        const initialTexture2 = new THREE.DataTexture(
-            initialData.slice(), 
-            width, 
-            height,
-            textureSettings.format,
-            textureSettings.type
-        );
-        
-        // Apply all settings to the second texture
-        initialTexture2.minFilter = textureSettings.minFilter;
-        initialTexture2.magFilter = textureSettings.magFilter;
-        initialTexture2.wrapS = textureSettings.wrapS;
-        initialTexture2.wrapT = textureSettings.wrapT;
-        initialTexture2.generateMipmaps = textureSettings.generateMipmaps;
-        initialTexture2.needsUpdate = true;
-        
-        // Settings for render targets
-        const rtSettings = {
-            format: textureSettings.format,
-            type: textureSettings.type,
-            minFilter: textureSettings.minFilter,
-            magFilter: textureSettings.magFilter,
-            wrapS: textureSettings.wrapS,
-            wrapT: textureSettings.wrapT,
-            generateMipmaps: textureSettings.generateMipmaps,
+            generateMipmaps: false,
             depthBuffer: false,
             stencilBuffer: false
         };
         
-        // Create render targets with these settings
+        // Create new render targets - don't reuse old ones
         const renderTarget1 = new THREE.WebGLRenderTarget(width, height, rtSettings);
         const renderTarget2 = new THREE.WebGLRenderTarget(width, height, rtSettings);
         
-        // Assign initial textures to render targets (IMPORTANT)
-        renderTarget1.texture = initialTexture;
-        renderTarget2.texture = initialTexture2;
+        console.log(`Created render targets`);
         
-        console.log(`Created render targets with textures`);
+        // Create the DataTextures
+        const texture1 = new THREE.DataTexture(
+            initialData.slice(), 
+            width, 
+            height, 
+            THREE.RGBAFormat,
+            THREE.FloatType
+        );
         
-        // Set up the ping-pong targets in the material
-        // Start with renderTarget2 as "previous" (source of truth)
-        (material as any).renderTargets = {
-            current: renderTarget1,  // We'll render INTO this one next
-            previous: renderTarget2  // We'll read FROM this one next
+        const texture2 = new THREE.DataTexture(
+            initialData.slice(), 
+            width, 
+            height, 
+            THREE.RGBAFormat,
+            THREE.FloatType
+        );
+        
+        // Apply settings to textures
+        texture1.minFilter = texture2.minFilter = rtSettings.minFilter;
+        texture1.magFilter = texture2.magFilter = rtSettings.magFilter;
+        texture1.wrapS = texture2.wrapS = rtSettings.wrapS;
+        texture1.wrapT = texture2.wrapT = rtSettings.wrapT;
+        texture1.generateMipmaps = texture2.generateMipmaps = rtSettings.generateMipmaps;
+        
+        // Force textures to upload to GPU immediately
+        texture1.needsUpdate = texture2.needsUpdate = true;
+        
+        // Key difference: store the DataTextures separately and don't directly assign
+        // to render targets to avoid immutability issues
+        (material as any).initialTextures = {
+            texture1: texture1,
+            texture2: texture2
         };
         
-        // Set the initial uniform to point to renderTarget2's texture
-        material.uniforms.previousState.value = renderTarget2.texture;
+        // Store the render targets
+        (material as any).renderTargets = {
+            current: renderTarget1,
+            previous: renderTarget2
+        };
+        
+        // Start with the initial texture as our previous state
+        material.uniforms.previousState.value = texture1;
         
         console.log(`Set up render targets and uniforms`);
         
@@ -197,11 +184,26 @@ export function createSmoothLifeMaterial() {
         time(0);
         color.reset();
         intensity(1);
-        shouldAdvance(false);
+        shouldAdvance(true); // Start with an advance
         needsUpdate(true);
         
         // Update all uniforms
         updateUniforms();
+    }
+
+    // Function to mark context as invalid (called on slide transitions)
+    function invalidateContext() {
+        console.log("Marking SmoothLife context as invalid");
+        isContextValid = false;
+        
+        // Clear references to avoid texture errors
+        material.uniforms.previousState.value = null;
+        
+        // Also clear renderTargets if they exist
+        if ((material as any).renderTargets) {
+            (material as any).renderTargets.current = null;
+            (material as any).renderTargets.previous = null;
+        }
     }
 
     return {
@@ -214,7 +216,9 @@ export function createSmoothLifeMaterial() {
         shouldAdvance,
         advanceFrame,
         updateUniforms,
-        needsUpdate
+        needsUpdate,
+        invalidateContext,
+        get isContextValid() { return isContextValid; }
     };
 }
 

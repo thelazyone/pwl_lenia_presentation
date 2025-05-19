@@ -2,7 +2,7 @@ import {makeScene2D, Txt, Rect, Circle, Img, Layout} from '@motion-canvas/2d';
 import {all, createRef, beginSlide, waitFor, Reference, loop} from '@motion-canvas/core';
 import {Colors, textStyles} from './shared';
 import {Three} from '../components/Three';
-import {threeScene, camera, setup, render, smoothLife} from '../three/smoothlife';
+import {threeScene, camera, setup, render, reset, cleanup, smoothLife} from '../three/smoothlife';
 
 import tackyNvidia from '../images/tacky_nvidia.jpg';
 
@@ -90,7 +90,7 @@ export default makeScene2D(function* (view) {
       ref={threeContainer}
       width={life_width}
       height={life_height}
-      opacity={1}
+      opacity={0} // Start hidden
     >
       <Three
         ref={three}
@@ -109,6 +109,13 @@ export default makeScene2D(function* (view) {
     </Layout>
   );
 
+  // Reset SmoothLife with clean state BEFORE showing it
+  // This ensures proper initialization
+  reset();
+  
+  // Wait a moment to ensure everything is initialized
+  yield* waitFor(0.3);
+
   // Show SmoothLife
   yield* all(
     threeContainer().opacity(1, 1),
@@ -116,38 +123,26 @@ export default makeScene2D(function* (view) {
     nvidia().opacity(0, .5)
   );
 
-  // Setup SmoothLife
-  setup();
-
   console.log('Starting SmoothLife simulation loop');
-  let frameCount = 0;
 
   // Run the simulation in a loop until the next slide
-  // Using this as a reference, since it was working quite perfectly!
-  // // Run the simulation until the next slide
-  // let currentState = getGameOfLifeState(randomState, 0);
-  // yield loop(function* () {
-  //   currentState = calculateNextState(currentState);
-  //   yield* updateRunningGrid(currentState, currentState, false, 0.1);
-  //   yield* waitFor(0.2);
-  // });
   yield loop(function* () {
-    frameCount++;
-    
-    // Only call advanceFrame() which is now optimized
+    // Advance the simulation (automatically sets shouldAdvance)
     smoothLife.advanceFrame();
-
-    yield* waitFor(.02); // Wait a little bit between frames
+    
+    // Wait a bit between frames for a good animation speed
+    yield* waitFor(0.01);
   });
-
-
-  
 
   yield* beginSlide('smoothlife-demo');
 
+  // HIDE before cleanup to avoid flicker
   yield* all(
-    threeContainer().opacity(0, 1),
+    threeContainer().opacity(0, 0.5),
   );
+  
+  // Clean up only after hidden
+  cleanup();
 
   yield* beginSlide('test');
 

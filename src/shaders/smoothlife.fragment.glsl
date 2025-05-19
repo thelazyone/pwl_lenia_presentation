@@ -11,12 +11,18 @@ const float dt = 0.30;
 const vec2 r = vec2(10.0, 3.0);  // x = outer radius, y = inner radius
 
 // SmoothLifeL rules
+// const float b1 = 0.257;
 const float b1 = 0.257;
-const float b2 = 0.336;
+// const float b2 = 0.336;
+const float b2 = 0.338;
+// const float d1 = 0.365;
 const float d1 = 0.365;
+// const float d2 = 0.549;
 const float d2 = 0.549;
 
+// const float alpha_n = 0.028;
 const float alpha_n = 0.028;
+// const float alpha_m = 0.147;
 const float alpha_m = 0.147;
 
 // Sigmoid functions for SmoothLife
