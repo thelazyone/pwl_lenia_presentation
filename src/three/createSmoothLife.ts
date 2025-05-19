@@ -64,21 +64,48 @@ export function createSmoothLifeMaterial() {
             type: THREE.FloatType
         });
 
+        console.log(`initializing map pixels`);
         // Initialize with random state
         const initialTexture = new THREE.DataTexture(
-            new Float32Array(1920 * 1080 * 4).map(() => Math.random()),
+            new Float32Array(1920 * 1080 * 4).map((_, i) => {
+                // For RGBA format, each pixel takes 4 values
+                const pixelIndex = Math.floor(i / 4);
+                const channel = i % 4;
+                
+                // Only set the red channel (r) for our binary state
+                if (channel === 0) {
+                    const x = pixelIndex % 1920;
+                    const y = Math.floor(pixelIndex / 1920);
+                    
+                    // Create some random "blobs" of life
+                    // Use x,y to create more interesting patterns
+                    const distance = Math.sqrt(
+                        Math.pow((x - 960) / 960, 2) + 
+                        Math.pow((y - 540) / 540, 2)
+                    );
+                    
+                    // Create a more interesting pattern with some randomness
+                    return 1.0; // Set all pixels to white for testing
+                }
+                // Set other channels to 0
+                return 0.0;
+            }),
             1920,
             1080,
             THREE.RGBAFormat,
             THREE.FloatType
         );
         initialTexture.needsUpdate = true;
+        console.log(`Initial texture created with size:`, initialTexture.image.width, initialTexture.image.height);
+        
+        // Set the initial texture to renderTarget1
         renderTarget1.texture = initialTexture;
-
+        
         // Set up the ping-pong targets
         currentTarget = renderTarget1;
         previousTarget = renderTarget2;
         material.uniforms.previousState.value = previousTarget.texture;
+        console.log(`Render targets set up, current target:`, currentTarget, `previous target:`, previousTarget);
 
         // Reset all signals
         time.reset();
@@ -104,10 +131,22 @@ export function createSmoothLifeMaterial() {
 
 export function createSmoothLife() {
     const material = createSmoothLifeMaterial();
-    const mesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(2, 2),
-        material.material
-    );
+    
+    // Create a plane that fills the screen with proper UV coordinates
+    const geometry = new THREE.PlaneGeometry(1./1920, 1./1080);
+    // Ensure UVs are properly set
+    const uvs = geometry.attributes.uv as THREE.BufferAttribute;
+    // Set UVs to cover the full texture
+    const uvArray = new Float32Array([
+        0, 0,  // bottom-left
+        1, 0,  // bottom-right
+        0, 1,  // top-left
+        1, 1   // top-right
+    ]);
+    uvs.array = uvArray;
+    uvs.needsUpdate = true;
+    
+    const mesh = new THREE.Mesh(geometry, material.material);
 
     return {
         mesh,

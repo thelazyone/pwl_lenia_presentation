@@ -137,7 +137,7 @@ export default makeScene2D(function* (view) {
   yield loop(function* () {
     frameCount++;
     console.log(`Frame ${frameCount}`);
-    yield* waitFor(.1); // Control the speed of the simulation
+    yield* waitFor(.1); // Check if closing every half second.
   });
 
 
