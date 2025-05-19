@@ -7,8 +7,8 @@ out vec4 fragColor;
 
 // SmoothLife parameters
 const float PI = 3.14159265;
-const float dt = 0.30;
-const vec2 r = vec2(10.0, 3.0);  // x = outer radius, y = inner radius
+const float dt = 0.30; 
+const vec2 r = vec2(12.0, 4.0);  // x = outer radius, y = inner radius
 
 // SmoothLifeL rules
 // const float b1 = 0.257;
@@ -86,15 +86,28 @@ vec2 convolve(vec2 pixelCoord) {
             // Get cell value at this position
             float cellValue = getCell(pixelCoord + offset);
             
-            // Add to inner disk sum
-            if (dist <= r.y) {
+            // Add to inner disk and outer ring with smooth boundary
+            if (dist < r.y - 0.5) {
+                // Fully in inner disk
                 result.y += cellValue;
                 areaInner += 1.0;
             } 
-            // Add to outer ring sum
-            else {
+            else if (dist > r.y + 0.5) {
+                // Fully in outer ring
                 result.x += cellValue;
                 areaOuter += 1.0;
+            }
+            else {
+                // Smooth transition at the boundary
+                float t = (dist - (r.y - 0.5)) / 1.0; // t goes from 0 to 1 in the transition region
+                float innerWeight = 1.0 - t;
+                float outerWeight = t;
+                
+                result.y += cellValue * innerWeight;
+                areaInner += innerWeight;
+                
+                result.x += cellValue * outerWeight;
+                areaOuter += outerWeight;
             }
         }
     }
