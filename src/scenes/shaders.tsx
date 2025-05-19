@@ -6,7 +6,7 @@ import {threeScene, camera, setup, render, smoothLife} from '../three/smoothlife
 
 import tackyNvidia from '../images/tacky_nvidia.jpg';
 
-const life_width = 1080;
+const life_width = 1920;
 const life_height = 1080;
 
 export default makeScene2D(function* (view) {
@@ -92,12 +92,6 @@ export default makeScene2D(function* (view) {
       height={life_height}
       opacity={1}
     >
-      <Rect
-        width={life_width}
-        height={life_height}
-        fill={'#003300'}
-        zIndex={1}
-      />
       <Three
         ref={three}
         width={life_width}
@@ -143,7 +137,7 @@ export default makeScene2D(function* (view) {
     // Only call advanceFrame() which is now optimized
     smoothLife.advanceFrame();
 
-    yield* waitFor(.05); // Wait half a second between frames
+    yield* waitFor(.01); // Wait a little bit between frames
   });
 
 

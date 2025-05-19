@@ -5,7 +5,7 @@ import { useScene } from '@motion-canvas/core/lib/utils';
 import smoothlifeFragment from '../shaders/smoothlife.fragment.glsl?raw';
 import smoothlifeVertex from '../shaders/smoothlife.vertex.glsl?raw';
 
-const life_width = 1080;
+const life_width = 1920;
 const life_height = 1080;
 
 export function createSmoothLifeMaterial() {
