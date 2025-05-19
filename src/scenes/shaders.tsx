@@ -85,14 +85,20 @@ export default makeScene2D(function* (view) {
   view.add(
     <Layout
       ref={threeContainer}
-      width={800}
+      width={1422}
       height={800}
       opacity={1}
     >
+      <Rect
+        width={1422}
+        height={800}
+        fill={'#003300'}
+        zIndex={1}
+      />
       <Three
         ref={three}
-        width={600}
-        height={600}
+        width={1422}
+        height={800}
         quality={1}
         scene={threeScene}
         camera={camera}
@@ -102,12 +108,6 @@ export default makeScene2D(function* (view) {
           render(renderer, scene, camera);
         }}
         zIndex={2}
-      />
-      <Rect
-        width={800}
-        height={800}
-        fill={'#003300'}
-        zIndex={1}
       />
     </Layout>
   );

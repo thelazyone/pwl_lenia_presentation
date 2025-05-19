@@ -6,12 +6,6 @@ import {Color as MCColor} from '@motion-canvas/core/lib/types';
 import smoothlifeFragment from '../shaders/smoothlife.fragment.glsl?raw';
 import smoothlifeVertex from '../shaders/smoothlife.vertex.glsl?raw';
 
-// Create render targets for ping-pong rendering
-let renderTarget1: THREE.WebGLRenderTarget;
-let renderTarget2: THREE.WebGLRenderTarget;
-let currentTarget: THREE.WebGLRenderTarget;
-let previousTarget: THREE.WebGLRenderTarget;
-
 export function createSmoothLifeMaterial() {
     const time = createSignal(0);
     const color = MCColor.createSignal('#ff0000');
@@ -30,8 +24,16 @@ export function createSmoothLifeMaterial() {
         fragmentShader: smoothlifeFragment,
         transparent: false,
         side: THREE.DoubleSide,
-        glslVersion: THREE.GLSL3
+        glslVersion: THREE.GLSL3,
+        depthTest: false,
+        depthWrite: false
     });
+
+    // Store render targets directly in the material
+    (material as any).renderTargets = {
+        current: null as THREE.WebGLRenderTarget | null,
+        previous: null as THREE.WebGLRenderTarget | null
+    };
 
     const update = createComputed(() => {
         time(time() + 1);
@@ -39,73 +41,65 @@ export function createSmoothLifeMaterial() {
         material.uniforms.color.value.set(color().toString());
         material.uniforms.intensity.value = intensity();
         material.uniforms.resolution.value = resolution();
-        
-        if (currentTarget && previousTarget) {
-            
-            // Swap render targets
-            [currentTarget, previousTarget] = [previousTarget, currentTarget];
-            material.uniforms.previousState.value = previousTarget.texture;
-        }
     });
 
     function setup() {
-        // Initialize render targets
-        renderTarget1 = new THREE.WebGLRenderTarget(1920, 1080, {
-            minFilter: THREE.LinearFilter,
-            magFilter: THREE.LinearFilter,
-            format: THREE.RGBAFormat,
-            type: THREE.FloatType
-        });
-
-        renderTarget2 = new THREE.WebGLRenderTarget(1920, 1080, {
-            minFilter: THREE.LinearFilter,
-            magFilter: THREE.LinearFilter,
-            format: THREE.RGBAFormat,
-            type: THREE.FloatType
-        });
-
+        console.log(`DEBUG: Starting setup`);
+        
+        // Create initial texture
         console.log(`initializing map pixels`);
-        // Initialize with random state
-        const initialTexture = new THREE.DataTexture(
-            new Float32Array(1920 * 1080 * 4).map((_, i) => {
-                // For RGBA format, each pixel takes 4 values
-                const pixelIndex = Math.floor(i / 4);
-                const channel = i % 4;
+        const initialData = new Float32Array(1920 * 1080 * 4).map((_, i) => {
+            const pixelIndex = Math.floor(i / 4);
+            const channel = i % 4;
+            
+            if (channel === 0) {
+                const x = pixelIndex % 1920;
+                const y = Math.floor(pixelIndex / 1920);
                 
-                // Only set the red channel (r) for our binary state
-                if (channel === 0) {
-                    const x = pixelIndex % 1920;
-                    const y = Math.floor(pixelIndex / 1920);
-                    
-                    // Create some random "blobs" of life
-                    // Use x,y to create more interesting patterns
-                    const distance = Math.sqrt(
-                        Math.pow((x - 960) / 960, 2) + 
-                        Math.pow((y - 540) / 540, 2)
-                    );
-                    
-                    // Create a more interesting pattern with some randomness
-                    return 1.0; // Set all pixels to white for testing
-                }
-                // Set other channels to 0
-                return 0.0;
-            }),
+                const distance = Math.sqrt(
+                    Math.pow((x - 960) / 960, 2) + 
+                    Math.pow((y - 540) / 540, 2)
+                );
+                
+                return Math.random() > 0.5 ? 1.0 : 0.0;
+            }
+            return 0.0;
+        });
+
+        // Create render targets with their own textures
+        const renderTarget1 = new THREE.WebGLRenderTarget(1920, 1080, {
+            minFilter: THREE.LinearFilter,
+            magFilter: THREE.LinearFilter,
+            format: THREE.RGBAFormat,
+            type: THREE.FloatType
+        });
+        console.log(`DEBUG: renderTarget1 created:`, renderTarget1);
+
+        const renderTarget2 = new THREE.WebGLRenderTarget(1920, 1080, {
+            minFilter: THREE.LinearFilter,
+            magFilter: THREE.LinearFilter,
+            format: THREE.RGBAFormat,
+            type: THREE.FloatType
+        });
+        console.log(`DEBUG: renderTarget2 created:`, renderTarget2);
+
+        const initialTexture = new THREE.DataTexture(
+            initialData,
             1920,
             1080,
             THREE.RGBAFormat,
             THREE.FloatType
         );
         initialTexture.needsUpdate = true;
-        console.log(`Initial texture created with size:`, initialTexture.image.width, initialTexture.image.height);
+        renderTarget2.texture = initialTexture;
+
+        console.log(`DEBUG: Initial data written to render targets`);
         
-        // Set the initial texture to renderTarget1
-        renderTarget1.texture = initialTexture;
-        
-        // Set up the ping-pong targets
-        currentTarget = renderTarget1;
-        previousTarget = renderTarget2;
-        material.uniforms.previousState.value = previousTarget.texture;
-        console.log(`Render targets set up, current target:`, currentTarget, `previous target:`, previousTarget);
+        // Set up the ping-pong targets in the material
+        (material as any).renderTargets.current = renderTarget1;
+        (material as any).renderTargets.previous = renderTarget2;
+        material.uniforms.previousState.value = renderTarget2.texture;
+        console.log(`Render targets set up in material:`, (material as any).renderTargets);
 
         // Reset all signals
         time.reset();
@@ -115,6 +109,7 @@ export function createSmoothLifeMaterial() {
 
         // Subscribe to render events
         useScene().lifecycleEvents.onBeginRender.subscribe(update);
+        console.log(`DEBUG: Setup complete`);
     }
 
     return {
@@ -123,9 +118,7 @@ export function createSmoothLifeMaterial() {
         time,
         color,
         intensity,
-        resolution,
-        currentTarget,
-        previousTarget
+        resolution
     };
 }
 
@@ -133,7 +126,7 @@ export function createSmoothLife() {
     const material = createSmoothLifeMaterial();
     
     // Create a plane that fills the screen with proper UV coordinates
-    const geometry = new THREE.PlaneGeometry(1./1920, 1./1080);
+    const geometry = new THREE.PlaneGeometry(2, 2);
     // Ensure UVs are properly set
     const uvs = geometry.attributes.uv as THREE.BufferAttribute;
     // Set UVs to cover the full texture
