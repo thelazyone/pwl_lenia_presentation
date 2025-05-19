@@ -6,8 +6,8 @@ import {Color as MCColor} from '@motion-canvas/core/lib/types';
 import smoothlifeFragment from '../shaders/smoothlife.fragment.glsl?raw';
 import smoothlifeVertex from '../shaders/smoothlife.vertex.glsl?raw';
 
-const life_width = 1920;
-const life_height = 1080;
+const life_width = 1080;
+const life_height = life_width;
 
 export function createSmoothLifeMaterial() {
     const time = createSignal(0);
@@ -15,6 +15,7 @@ export function createSmoothLifeMaterial() {
     const intensity = createSignal(1);
     const resolution = createSignal(new THREE.Vector2(life_width, life_height));
     const shouldAdvance = createSignal(false);
+    
     // To track if we need to update uniforms
     const needsUpdate = createSignal(false);
 
