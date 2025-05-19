@@ -10,6 +10,9 @@ const smoothLife = createSmoothLife();
 // Temporary render target
 let tempTarget: THREE.WebGLRenderTarget;
 
+// Frame counter for controlling simulation speed
+let frameCounter = 0;
+
 // Add camera and mesh to scene
 threeScene.add(camera);
 threeScene.add(smoothLife.mesh);
@@ -40,29 +43,39 @@ function setup() {
 }
 
 function render(renderer: WebGLRenderer, scene: Scene, camera: Camera) {
-    // Update time before rendering
-    smoothLife.time(smoothLife.time() + 1);
-    smoothLife.material.uniforms.time.value = smoothLife.time();
-
     const renderTargets = (smoothLife.material as any).renderTargets;
     if (!renderTargets.current || !renderTargets.previous) {
         console.error('Render targets not initialized');
         return;
     }
 
-    // First render to screen using previous state
+    // Only update uniforms if needed
+    if (smoothLife.needsUpdate()) {
+        smoothLife.updateUniforms();
+    }
+
+    // Always render to screen using previous state
     renderer.setRenderTarget(null);
     renderer.render(scene, camera);
 
-    // Then render to current target for next frame
-    renderer.setRenderTarget(renderTargets.current);
-    renderer.render(scene, camera);
+    // Only update the simulation if shouldAdvance is true
+    if (smoothLife.shouldAdvance()) {
+        console.log(`Called Render with shouldAdvance.`);
+        // Reset shouldAdvance flag
+        smoothLife.shouldAdvance(false);
 
-    // Update previous state uniform to use the target we just rendered to
-    smoothLife.material.uniforms.previousState.value = renderTargets.current.texture;
+        // Render to current target for next frame
+        renderer.setRenderTarget(renderTargets.current);
+        renderer.render(scene, camera);
 
-    // Swap targets for next frame
-    [renderTargets.current, renderTargets.previous] = [renderTargets.previous, renderTargets.current];
+        // Update previous state uniform to use the target we just rendered to
+        smoothLife.material.uniforms.previousState.value = renderTargets.current.texture;
+
+        // Swap targets for next frame
+        [renderTargets.current, renderTargets.previous] = [renderTargets.previous, renderTargets.current];
+        
+        console.log('Simulation advanced by one frame');
+    }
 }
 
-export {threeScene, camera, setup, render}; 
+export {threeScene, camera, setup, render, smoothLife}; 

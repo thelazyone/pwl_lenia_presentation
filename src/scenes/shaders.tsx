@@ -2,7 +2,7 @@ import {makeScene2D, Txt, Rect, Circle, Img, Layout} from '@motion-canvas/2d';
 import {all, createRef, beginSlide, waitFor, Reference, loop} from '@motion-canvas/core';
 import {Colors, textStyles} from './shared';
 import {Three} from '../components/Three';
-import {threeScene, camera, setup, render} from '../three/smoothlife';
+import {threeScene, camera, setup, render, smoothLife} from '../three/smoothlife';
 
 import tackyNvidia from '../images/tacky_nvidia.jpg';
 
@@ -137,7 +137,11 @@ export default makeScene2D(function* (view) {
   yield loop(function* () {
     frameCount++;
     console.log(`Frame ${frameCount}`);
-    yield* waitFor(.1); // Check if closing every half second.
+    
+    // Only call advanceFrame() which is now optimized
+    smoothLife.advanceFrame();
+
+    yield* waitFor(.5); // Wait half a second between frames
   });
 
 

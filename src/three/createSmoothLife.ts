@@ -11,6 +11,9 @@ export function createSmoothLifeMaterial() {
     const color = MCColor.createSignal('#ff0000');
     const intensity = createSignal(1);
     const resolution = createSignal(new THREE.Vector2(1920, 1080));
+    const shouldAdvance = createSignal(false);
+    // To track if we need to update uniforms
+    const needsUpdate = createSignal(false);
 
     const material = new THREE.ShaderMaterial({
         uniforms: {
@@ -35,13 +38,21 @@ export function createSmoothLifeMaterial() {
         previous: null as THREE.WebGLRenderTarget | null
     };
 
-    const update = createComputed(() => {
-        time(time() + 1);
+    // Update the material uniforms - but only call this explicitly when needed
+    function updateUniforms() {
         material.uniforms.time.value = time();
         material.uniforms.color.value.set(color().toString());
         material.uniforms.intensity.value = intensity();
         material.uniforms.resolution.value = resolution();
-    });
+        needsUpdate(false);
+    }
+
+    // Function to advance the simulation by one frame
+    function advanceFrame() {
+        time(time() + 1);
+        shouldAdvance(true);
+        needsUpdate(true);
+    }
 
     function setup() {
         console.log(`DEBUG: Starting setup`);
@@ -106,10 +117,11 @@ export function createSmoothLifeMaterial() {
         color.reset();
         intensity.reset();
         resolution.reset();
+        shouldAdvance.reset();
+        needsUpdate.reset();
 
-        // Subscribe to render events
-        useScene().lifecycleEvents.onBeginRender.subscribe(update);
-        console.log(`DEBUG: Setup complete`);
+        // Initial update
+        updateUniforms();
     }
 
     return {
@@ -118,7 +130,11 @@ export function createSmoothLifeMaterial() {
         time,
         color,
         intensity,
-        resolution
+        resolution,
+        shouldAdvance,
+        advanceFrame,
+        updateUniforms,
+        needsUpdate
     };
 }
 
