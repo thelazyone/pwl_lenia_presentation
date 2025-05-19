@@ -1,5 +1,5 @@
 import {makeScene2D, Txt, Rect, Circle, Img, Layout} from '@motion-canvas/2d';
-import {all, createRef, beginSlide, waitFor, Reference} from '@motion-canvas/core';
+import {all, createRef, beginSlide, waitFor, Reference, loop} from '@motion-canvas/core';
 import {Colors, textStyles} from './shared';
 import {Three} from '../components/Three';
 import {threeScene, camera, setup, render} from '../three/smoothlife';
@@ -96,7 +96,11 @@ export default makeScene2D(function* (view) {
         quality={1}
         scene={threeScene}
         camera={camera}
-        onRender={render}
+        onRender={(renderer, scene, camera) => {
+          // The update is handled by the computed signal in createSmoothLife
+          // that's subscribed to onBeginRender
+          render(renderer, scene, camera);
+        }}
         zIndex={2}
       />
       <Rect
@@ -117,6 +121,27 @@ export default makeScene2D(function* (view) {
 
   // Setup SmoothLife
   setup();
+
+  console.log('Starting SmoothLife simulation loop');
+  let frameCount = 0;
+
+  // Run the simulation in a loop until the next slide
+  // Using this as a reference, since it was working quite perfectly!
+  // // Run the simulation until the next slide
+  // let currentState = getGameOfLifeState(randomState, 0);
+  // yield loop(function* () {
+  //   currentState = calculateNextState(currentState);
+  //   yield* updateRunningGrid(currentState, currentState, false, 0.1);
+  //   yield* waitFor(0.2);
+  // });
+  yield loop(function* () {
+    frameCount++;
+    console.log(`Frame ${frameCount}`);
+    yield* waitFor(.1); // Control the speed of the simulation
+  });
+
+
+  
 
   yield* beginSlide('smoothlife-demo');
 
