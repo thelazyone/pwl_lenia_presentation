@@ -6,6 +6,9 @@ import {threeScene, camera, setup, render, smoothLife} from '../three/smoothlife
 
 import tackyNvidia from '../images/tacky_nvidia.jpg';
 
+const life_width = 1080;
+const life_height = 1080;
+
 export default makeScene2D(function* (view) {
   const title = createRef<Txt>();
   const background = createRef<Rect>();
@@ -85,20 +88,20 @@ export default makeScene2D(function* (view) {
   view.add(
     <Layout
       ref={threeContainer}
-      width={1422}
-      height={800}
+      width={life_width}
+      height={life_height}
       opacity={1}
     >
       <Rect
-        width={1422}
-        height={800}
+        width={life_width}
+        height={life_height}
         fill={'#003300'}
         zIndex={1}
       />
       <Three
         ref={three}
-        width={1422}
-        height={800}
+        width={life_width}
+        height={life_height}
         quality={1}
         scene={threeScene}
         camera={camera}

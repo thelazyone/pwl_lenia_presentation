@@ -5,49 +5,67 @@ uniform sampler2D previousState;
 in vec2 vUv;
 out vec4 fragColor;
 
-// Function to get the state of a neighboring pixel
-float getNeighbor(vec2 offset) {
-    // Calculate pixel size in UV space
-    vec2 pixelSize = 1.0 / resolution;
+// Debug uniform to help diagnose problems
+//uniform bool debugMode;
+
+// Get cell state using direct texture coordinate sampling to ensure proper alignment
+float getCell(ivec2 pixelCoord) {
+    // Wrap coordinates to handle edge cases
+    ivec2 localPixelCoord = pixelCoord / 2;
+    localPixelCoord.x = (pixelCoord.x + int(resolution.x) / 2) % int(resolution.x);
+    localPixelCoord.y = (pixelCoord.y + int(resolution.y) / 2) % int(resolution.y);
     
-    // Calculate neighbor position in UV space
-    vec2 neighborUv = vUv + offset * pixelSize;
+    // Convert to normalized UV coordinates - note we're correcting for WebGL texture coordinates
+    // WebGL textures are indexed (0,0) at bottom-left, but we want (0,0) at top-left for consistency
+    // We also add 0.5 to each coordinate to sample the center of the pixel
+    vec2 uv = vec2(
+        (float(localPixelCoord.x) + 0.5) / resolution.x,
+        (float(localPixelCoord.y) + 0.5) / resolution.y
+    );
     
-    // Wrap around edges
-    neighborUv = fract(neighborUv);
-    
-    return texture(previousState, neighborUv).r;
+    // Sample the texture at the calculated position
+    return texture(previousState, uv).r;
 }
 
 void main() {
-
-    // Sample the current pixel
+    // Calculate pixel coordinates directly from UV
+    ivec2 pixelCoord = ivec2(vUv * resolution * 2.0);
+    
+    // Get current cell state using direct sampling
     float currentState = texture(previousState, vUv).r;
     
-    
-    // Count live neighbors (using a threshold of 0.5 to determine if a cell is alive)
+    // Count live neighbors using pixel coordinates
     float neighbors = 0.0;
-    neighbors += getNeighbor(vec2(-1.0, -1.0)) > 0.5 ? 1.0 : 0.0; // top-left
-    neighbors += getNeighbor(vec2( 0.0, -1.0)) > 0.5 ? 1.0 : 0.0; // top
-    neighbors += getNeighbor(vec2( 1.0, -1.0)) > 0.5 ? 1.0 : 0.0; // top-right
-    neighbors += getNeighbor(vec2(-1.0,  0.0)) > 0.5 ? 1.0 : 0.0; // left
-    neighbors += getNeighbor(vec2( 1.0,  0.0)) > 0.5 ? 1.0 : 0.0; // right
-    neighbors += getNeighbor(vec2(-1.0,  1.0)) > 0.5 ? 1.0 : 0.0; // bottom-left
-    neighbors += getNeighbor(vec2( 0.0,  1.0)) > 0.5 ? 1.0 : 0.0; // bottom
-    neighbors += getNeighbor(vec2( 1.0,  1.0)) > 0.5 ? 1.0 : 0.0; // bottom-right
-
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            // Skip the center cell
+            if (x == 0 && y == 0) continue;
+            
+            // Check if the neighbor is alive (>0.5)
+            if (getCell(pixelCoord + ivec2(x, y)) > 0.5) {
+                neighbors += 1.0;
+            }
+        }
+    }
+    
     // Apply Game of Life rules
     float nextState = 0.0;
-    if (currentState > 0.5) { // Cell is alive
+    if (currentState > 0.5) {
+        // If cell is alive, survives if it has 2-3 neighbors
         if (neighbors > 1.5 && neighbors < 3.5) {
             nextState = 1.0; // Survives
         }
-    } else { // Cell is dead
+    } else { 
+        // Cell is dead, becomes alive if it has 3 neighbors
         if (neighbors > 2.5 && neighbors < 3.5) {
             nextState = 1.0; // Becomes alive
         }
     }
     
+    // Testing getCell
+    // nextState = getCell(pixelCoord);
+    // float nextState = texture(previousState, vUv).r;
+
     // Output the next state
-    fragColor = vec4(vec3(nextState) , 1.0);
+    fragColor = vec4(vec3(nextState), 1.0);
 } 
