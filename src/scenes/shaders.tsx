@@ -410,16 +410,16 @@ export default makeScene2D(function* (view) {
   // HIDE before cleanup to avoid flicker
   yield* all(
     threeContainer().opacity(0, 0.5),
-    title().opacity(1, .5),
   );
   
   // Clean up only after hidden
   cleanup();
 
   // End of the slide
+  title().position.y(0)
+  title().text("Conclusions")
   yield* all(
-    title().position.y(0, 1),
-    title().text("Conclusions", 1)
+    title().opacity(1, .5),
   );
 
   yield* beginSlide('transition-to-conclusions');

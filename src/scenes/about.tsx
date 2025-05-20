@@ -193,10 +193,12 @@ export default makeScene2D(function* (view) {
 
   // Fade it all out
   yield* all(
+    nameLabel().opacity(0, .5),
     workLabel().opacity(0, .5),
     passionLabel().opacity(0, .5),
     notAnExpertLabel().opacity(0, .5),
     notAnExpertLabel2().opacity(0, .5),
+    paperLink().opacity(0, .5),
     title().opacity(0, .5),
   ) 
 
