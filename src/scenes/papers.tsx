@@ -41,7 +41,6 @@ export default makeScene2D(function* (view) {
 
   // Move up as usual
   yield* title().position([0, -view.height()/2 + 150], 1);
-  yield* beginSlide('title-top');
 
   // Add two big text labels
   const smoothLifeLabel = createRef<Txt>();

@@ -30,11 +30,8 @@ export default makeScene2D(function* (view) {
     </Txt>
   );
 
-  yield* beginSlide('title');
-
   // Move up as usual
   yield* title().position([0, -view.height()/2 + 150], 1);
-  yield* beginSlide('title-top');
 
   // add a label saying "Discrete Convolution" as h2
   const discreteConvolutionLabel = createRef<Txt>();
