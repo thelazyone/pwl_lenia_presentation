@@ -7,6 +7,7 @@ import small_eyes from '../images/small_eyes.jpg';
 import double_gliders from '../images/double_gliders.jpg';
 import gliders from '../images/gliders.jpg';
 import bridges from '../images/bridges.jpg';
+import rotating from '../images/rotating.jpg';
 
 
 export default makeScene2D(function* (view) {
@@ -65,6 +66,7 @@ export default makeScene2D(function* (view) {
   const double_gliders_img = createRef<Img>();
   const gliders_img = createRef<Img>();
   const bridges_img = createRef<Img>();
+  const rotating_img = createRef<Img>();
 
   // And descriptions
   const stable_label = createRef<Txt>();
@@ -110,7 +112,7 @@ export default makeScene2D(function* (view) {
       <Img
         ref={double_gliders_img}
         src={double_gliders}
-        position={[500, -view.height()/2 + 750]}
+        position={[430, -view.height()/2 + 750]}
         scale={1}
       />
 
@@ -118,6 +120,13 @@ export default makeScene2D(function* (view) {
         ref={gliders_img}
         src={gliders}
         position={[500, -view.height()/2 + 450]}
+        scale={1}
+      />
+
+      <Img
+        ref={rotating_img}
+        src={rotating}
+        position={[630, -view.height()/2 + 750]}
         scale={1}
       />
 
