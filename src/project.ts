@@ -19,7 +19,6 @@ import conclusions from './scenes/conclusions?scene';
 Code.defaultHighlighter = new LezerHighlighter(parser);
 
 export default makeProject({
-  // scenes: [about, intro, oneDimension, gameOfLife, continuousSpace, papers, implementation, shaders, conclusions],
-  scenes: [conclusions,],
+  scenes: [about, intro, oneDimension, gameOfLife, continuousSpace, papers, implementation, shaders, conclusions],
   // scenes: [testScene],
 });

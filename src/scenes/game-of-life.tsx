@@ -543,7 +543,6 @@ if (count == 2 && isAlive) {
     Array(23).fill(null).map(() => Array(33).fill(false)),
     false
   );
-  yield* beginSlide('clear-grid');
 
   // Create a glider in the bottom left
   const glider: [number, number][] = [
