@@ -1,5 +1,5 @@
 import {makeScene2D, Txt, Rect, Circle, Img, Layout} from '@motion-canvas/2d';
-import {all, createRef, beginSlide} from '@motion-canvas/core';
+import {all, createRef, beginSlide, waitFor, loop} from '@motion-canvas/core';
 import {Colors, textStyles} from './shared';
 
 import big_eyes from '../images/big_eyes.jpg';
@@ -8,6 +8,11 @@ import double_gliders from '../images/double_gliders.jpg';
 import gliders from '../images/gliders.jpg';
 import bridges from '../images/bridges.jpg';
 import rotating from '../images/rotating.jpg';
+
+// Adding smoothlife at the end again.
+import {Three} from '../components/Three';
+import {threeScene, camera, setup, render, reset, cleanup, smoothLife} from '../three/smoothlife';
+
 
 
 export default makeScene2D(function* (view) {
@@ -329,6 +334,61 @@ export default makeScene2D(function* (view) {
     title().position.y(0, 1),
     title().text("The End", 1)
   );
-  yield* beginSlide('The End');
+
+  yield* waitFor(3);
+
+  // Adding the smoothlife thingy again.
+  const threeContainer = createRef<Layout>();
+  const three = createRef<Three>();
+  
+  // Add Three.js container
+  var full_screen_square = 1920;
+  view.add(
+    <Layout
+      ref={threeContainer}
+      width={full_screen_square}
+      height={full_screen_square}
+      opacity={0} // Start hidden
+    >
+      <Three
+        ref={three}
+        width={full_screen_square}
+        height={full_screen_square}
+        quality={1}
+        scene={threeScene}
+        camera={camera}
+        onRender={(renderer, scene, camera) => {
+          // The update is handled by the computed signal in createSmoothLife
+          // that's subscribed to onBeginRender
+          render(renderer, scene, camera);
+        }}
+        zIndex={2}
+      />
+    </Layout>
+  );
+
+  // Reset SmoothLife with clean state BEFORE showing it
+  // This ensures proper initialization
+  reset();
+  
+  // Wait a moment to ensure everything is initialized
+  yield* waitFor(0.3);
+
+  // Show SmoothLife
+  yield* all(
+    threeContainer().opacity(1, 1),
+    title().opacity(0, 1),
+  );
+
+  // Run the simulation in a loop until the next slide
+  yield loop(function* () {
+    // Advance the simulation (automatically sets shouldAdvance)
+    smoothLife.advanceFrame();
+    
+    // Wait a bit between frames for a good animation speed
+    yield* waitFor(0.01);
+  });
+
+  yield* beginSlide('smoothlife_end');
 
 }); 

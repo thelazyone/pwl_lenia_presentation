@@ -171,10 +171,10 @@ export default makeScene2D(function* (view) {
       if cell[r1][j]{
         distance = sqrt((r - i)^2 + (c - j)^2)
         if  distance < inner_radius {
-          state[r][c] += inner_weight(distance);
+          inner_state[r][c] += inner_weight(distance);
         }
         else if (distance < outer_radius) {
-          state[r][c] += outer_weight(distance);
+          outer_state[r][c] += outer_weight(distance);
         }
       }
     } 
@@ -237,10 +237,10 @@ ifft_row(state_intermediate, state);
           if cell[r1][j]{
             distance = sqrt((r - i)^2 + (c - j)^2)
             if  distance < inner_radius {
-              state[r][c] += inner_weight(distance);
+              inner_state[r][c] += inner_weight(distance);
             }
             else if (distance < outer_radius) {
-              state[r][c] += outer_weight(distance);
+              outer_state[r][c] += outer_weight(distance);
             }
           }
         } 

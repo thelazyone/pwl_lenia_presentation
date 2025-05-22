@@ -333,12 +333,10 @@ export default makeScene2D(function* (view) {
     );
  
 
+  yield* beginSlide('reference to shadertoy');
 
-
-  yield* beginSlide('second-shader-loop');
-
-  // Hiding everything else
-  yield* all(
+   // Hiding everything else
+   yield* all(
     shaderType().opacity(0, .5),
     shaderText().opacity(0, .5),
     geometryBox().opacity(0, .5),
@@ -353,6 +351,43 @@ export default makeScene2D(function* (view) {
     bufferBox().opacity(0, .5),
     bufferText().opacity(0, .5),
     arrowLine4().opacity(0, .5)
+  );
+
+  // Adding three labels with the shadertoy link
+  const shadertoyLayout = createRef<Layout>();
+
+  view.add(
+    <Layout ref={shadertoyLayout} opacity={0}>
+      <Txt
+        text="Implementation on Shadertoy"
+        {...textStyles.h2}
+        position={[0, -100]}
+        opacity={1} 
+      />
+      <Txt
+        text="(less than 200 lines of code)"
+        {...textStyles.h2}
+        position={[0, 0]}
+        opacity={1}
+      />
+      <Txt
+        text="https://www.shadertoy.com/view/XtdSDn"
+        {...textStyles.h2}
+        position={[0, 200]}
+        fill={'#d1d1d1'}
+        opacity={1}
+      />
+    </Layout>
+  );
+
+  yield* all(
+    shadertoyLayout().opacity(1, .5),
+  );
+
+  yield* beginSlide('second-shader-loop');
+
+  yield* all(
+    shadertoyLayout().opacity(0, .5),
   );
 
   // Add Three.js container
